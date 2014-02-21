@@ -1,0 +1,6 @@
+﻿<?xml version="1.0" encoding="utf-8" ?> 
+<ApplicationPackage SchemaVersion="1.0">
+  <Components>
+    <ComponentEntry AppName="PoleSagTool" ModuleName="./Contents/PoleSagTool.dll"/>
+  </Components>
+</ApplicationPackage>
