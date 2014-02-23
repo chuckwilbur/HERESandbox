@@ -88,19 +88,7 @@ namespace PoleSagTool
                 if (dRes.Status != PromptStatus.OK) return;
                 double extraWirePct = dRes.Value;
 
-                Point3d max1 = firstPole.GeometricExtents.MaxPoint;
-                Point3d min1 = firstPole.GeometricExtents.MinPoint;
-                Point3d pt1 = new Point3d(
-                    (max1.X + min1.X) / 2,
-                    (max1.Y + min1.Y) / 2,
-                    Math.Max(max1.Z, min1.Z));
-                Point3d max2 = secondPole.GeometricExtents.MaxPoint;
-                Point3d min2 = secondPole.GeometricExtents.MinPoint;
-                Point3d pt2 = new Point3d(
-                    (max2.X + min2.X) / 2,
-                    (max2.Y + min2.Y) / 2,
-                    Math.Max(max2.Z, min2.Z));
-                Point3d[] pts = { pt1, pt2 };
+                Point3d[] pts = { GetPoleTop(firstPole), GetPoleTop(secondPole) };
 
                 Polyline3d pline = new Polyline3d();
                 tr.InsertEntity(pline);
@@ -124,15 +112,8 @@ namespace PoleSagTool
         {
             using (Transaction tr = AcadApp.TM.StartTransaction())
             {
-                Polyline3d span = null;
-                while (span == null || !span.GetExtraWirePct().HasValue)
-                {
-                    PromptEntityResult per =
-                        AcadApp.Ed.GetEntity("\nPick span: ");
-                    if (per.Status != PromptStatus.OK) return;
-                    span = tr.GetObject(
-                        per.ObjectId, OpenMode.ForRead) as Polyline3d;
-                }
+                Polyline3d span;
+                if (PromptForSpan(tr, out span) != PromptStatus.OK) return;
 
                 double extraWirePct = span.GetExtraWirePct().Value;
 
@@ -149,6 +130,62 @@ namespace PoleSagTool
 
                 tr.Commit();
             }
+        }
+
+        [CommandMethod("USpan")]
+        public void UpdateSpan()
+        {
+            using (Transaction tr = AcadApp.TM.StartTransaction())
+            {
+                Polyline3d span;
+                if (PromptForSpan(tr, out span) != PromptStatus.OK) return;
+
+                List<Handle> poles = span.GetPoles();
+                int i = 0;
+                foreach(ObjectId vertexId in span)
+                {
+                    if (i >= poles.Count) continue;
+
+                    Handle poleHandle = poles[i];
+                    ObjectId poleId = AcadApp.DB.GetObjectId(false, poleHandle, 0);
+                    if (poleId == ObjectId.Null) continue;
+                    var pole = tr.GetObject(poleId, OpenMode.ForRead) as Solid3d;
+                    if (pole == null) continue;
+
+                    var vertex = tr.GetObject(
+                        vertexId, OpenMode.ForWrite) as PolylineVertex3d;
+                    vertex.Position = GetPoleTop(pole);
+
+                    ++i;
+                }
+
+                tr.Commit();
+            }
+        }
+
+        private static Point3d GetPoleTop(Solid3d pole)
+        {
+            Point3d max = pole.GeometricExtents.MaxPoint;
+            Point3d min = pole.GeometricExtents.MinPoint;
+            Point3d ptTop = new Point3d(
+                (max.X + min.X) / 2,
+                (max.Y + min.Y) / 2,
+                Math.Max(max.Z, min.Z));
+            return ptTop;
+        }
+
+        private static PromptStatus PromptForSpan(Transaction tr, out Polyline3d span)
+        {
+            span = null;
+            while (span == null || !span.GetExtraWirePct().HasValue)
+            {
+                PromptEntityResult per =
+                    AcadApp.Ed.GetEntity("\nPick span: ");
+                if (per.Status != PromptStatus.OK) return per.Status;
+                span = tr.GetObject(
+                    per.ObjectId, OpenMode.ForRead) as Polyline3d;
+            }
+            return PromptStatus.OK;
         }
     }
 }
