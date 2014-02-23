@@ -42,7 +42,7 @@ namespace PoleSagTool
                 sol.CreateFrustum(height, radius, radius, radius);
 
                 // Add the Solid3d to the modelspace
-                AcadApp.AddEntityToDatabase(sol);
+                tr.InsertEntity(sol);
 
                 // And transform it to the selected point
                 sol.TransformBy(Matrix3d.Displacement(pt - Point3d.Origin));
@@ -80,6 +80,14 @@ namespace PoleSagTool
                         per.ObjectId, OpenMode.ForRead) as Solid3d;
                 }
 
+                PromptDoubleOptions pdo =
+                    new PromptDoubleOptions("\nEnter % extra wire: ");
+                pdo.DefaultValue = 10;
+                pdo.AllowNone = true;
+                PromptDoubleResult dRes = AcadApp.Ed.GetDouble(pdo);
+                if (dRes.Status != PromptStatus.OK) return;
+                double extraWirePct = dRes.Value;
+
                 Point3d max1 = firstPole.GeometricExtents.MaxPoint;
                 Point3d min1 = firstPole.GeometricExtents.MinPoint;
                 Point3d pt1 = new Point3d(
@@ -95,7 +103,7 @@ namespace PoleSagTool
                 Point3d[] pts = { pt1, pt2 };
 
                 Polyline3d pline = new Polyline3d();
-                AcadApp.AddEntityToDatabase(pline);
+                tr.InsertEntity(pline);
                 foreach (Point3d pt in pts)
                 {
                     using (PolylineVertex3d poly3dVertex = new PolylineVertex3d(pt))
@@ -104,6 +112,8 @@ namespace PoleSagTool
                         pline.AppendVertex(poly3dVertex);
                     }
                 }
+
+                pline.SetSpanData(firstPole, secondPole, extraWirePct);
 
                 tr.Commit();
             }

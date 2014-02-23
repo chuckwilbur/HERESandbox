@@ -32,18 +32,5 @@ namespace PoleSagTool
         {
             get { return CurDoc.Editor; }
         }
-
-        public static void AddEntityToDatabase(Entity ent)
-        {
-            Transaction tr = TM.TopTransaction;
-            BlockTable bt = (BlockTable)tr.GetObject(
-                DB.BlockTableId, OpenMode.ForRead);
-
-            BlockTableRecord ms = (BlockTableRecord)tr.GetObject(
-                bt[BlockTableRecord.ModelSpace], OpenMode.ForWrite);
-
-            ms.AppendEntity(ent);
-            tr.AddNewlyCreatedDBObject(ent, true);
-        }
     }
 }
