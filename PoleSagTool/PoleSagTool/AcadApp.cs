@@ -10,9 +10,19 @@ namespace PoleSagTool
 {
     public class AcadApp
     {
+        public static Autodesk.AutoCAD.ApplicationServices.Document CurDoc
+        {
+            get { return AcadApplication.DocumentManager.MdiActiveDocument; }
+        }
+
+        public static Autodesk.AutoCAD.DatabaseServices.Database DB
+        {
+            get { return CurDoc.Database; }
+        }
+
         public static Autodesk.AutoCAD.EditorInput.Editor Ed
         {
-            get { return AcadApplication.DocumentManager.MdiActiveDocument.Editor; }
+            get { return CurDoc.Editor; }
         }
     }
 }
