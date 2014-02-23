@@ -18,6 +18,7 @@ namespace PoleSagTool
         /// </summary>
         void IExtensionApplication.Initialize()
         {
+            SpanDrawOverrule.Add();
             AcadApp.Ed.WriteMessage("\nPole Sag Tool is loaded...\n");
         }
 
@@ -26,7 +27,10 @@ namespace PoleSagTool
         /// So this method wouldn't be invoked until AutoCAD exits.
         /// You're not encouraged to do anything in this method.
         /// </summary>
-        void IExtensionApplication.Terminate() { }
+        void IExtensionApplication.Terminate()
+        {
+            SpanDrawOverrule.Remove();
+        }
 
         #endregion
     }

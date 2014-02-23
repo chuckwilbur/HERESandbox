@@ -1,15 +1,22 @@
-﻿using Autodesk.AutoCAD.DatabaseServices;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+
+using Autodesk.AutoCAD.DatabaseServices;
+using Autodesk.AutoCAD.Runtime;
 
 namespace PoleSagTool
 {
     public static class SpanExt
     {
         static string RegisteredAppName { get { return "HERE_PoleSag"; } }
+
+        public static void SetSpanDataFilter(this Overrule overrule)
+        {
+            overrule.SetXDataFilter(RegisteredAppName);
+        }
 
         public static bool HasPole(this Polyline3d pline, string poleHandle)
         {
@@ -21,11 +28,11 @@ namespace PoleSagTool
             return false;
         }
 
-        public static double GetExtraWirePct(this Polyline3d pline)
+        public static double? GetExtraWirePct(this Polyline3d pline)
         {
             var xData = new XData(pline, RegisteredAppName);
             Dictionary<string, object> data = xData.GetAppData();
-            if (data.Count < 1) return 0;
+            if (data.Count < 1) return null;
             return Convert.ToDouble(data["EXTRA_PCT"]);
         }
 
@@ -36,6 +43,14 @@ namespace PoleSagTool
             data.Add("POLE2", pole2.Handle.ToString());
             data.Add("EXTRA_PCT", extraWirePct);
             var xData = new XData(pline, RegisteredAppName);
+            xData.SetAppData(data);
+        }
+
+        public static void SetExtraWirePct(this Polyline3d pline, double extraWirePct)
+        {
+            var xData = new XData(pline, RegisteredAppName);
+            Dictionary<string, object> data = xData.GetAppData();
+            data["EXTRA_PCT"] = extraWirePct;
             xData.SetAppData(data);
         }
     }
