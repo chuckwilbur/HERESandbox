@@ -34,7 +34,6 @@ namespace PoleSagTool
             double? extraWirePct = pline.GetExtraWirePct();
             if (!extraWirePct.HasValue) return base.WorldDraw(drawable, wd);
 
-            var pts = new Point3dCollection();
             // Catenary: http://en.wikipedia.org/wiki/Catenary#Derivation_of_equations_for_the_curve
             // y = a cosh (x/a) where x is distance along line here
             // sqrt(s^2 - v^2) = 2a sinh (h/2a)
@@ -74,6 +73,7 @@ namespace PoleSagTool
             double xm = (h - 2 * a * Arsinh(v / (2 * a * Math.Sinh(-h / (2 * a))))) / 2;
             double ym = p2.Z - a * Math.Cosh((h-xm) / a);
 
+            var pts = new Point3dCollection();
             for (int i = 0; i <= 100; ++i)
             {
                 double x = i * pline.Length / 100;
@@ -82,7 +82,39 @@ namespace PoleSagTool
                 Point3d adjustedPt = new Point3d(pt.X, pt.Y, a * Math.Cosh((x - xm) / a) + ym);
                 pts.Add(adjustedPt);
             }
+
+            // Store old graphics color and set to the color we want
+            short oldColor = wd.SubEntityTraits.Color;
+            wd.SubEntityTraits.Color = 1;
+
             wd.Geometry.Polyline(pts, Vector3d.ZAxis, IntPtr.Zero);
+
+            if (xm > 0 && xm < pline.Length)
+            {
+                // Draw dimension from lowest point to ground
+                Point3d pt = pline.GetPointAtDist(xm);
+                pts.Clear();
+                pts.Add(new Point3d(pt.X, pt.Y, a + ym));
+                pts.Add(new Point3d(pt.X, pt.Y, 0));
+
+                wd.SubEntityTraits.Color = 5;
+
+                // Draw the polyline
+                wd.Geometry.Polyline(pts, Vector3d.YAxis, IntPtr.Zero);
+
+                // Draw the dimension text
+                Plane xyPlane=new Plane();
+                Vector3d lineDirInPlane =new Vector3d(xyPlane, (p2-p1).Convert2d(xyPlane));
+                wd.Geometry.Text(
+                    new Point3d(pt.X, pt.Y, (a + ym) / 2),
+                    lineDirInPlane.RotateBy(-Math.PI / 2, Vector3d.ZAxis),
+                    lineDirInPlane,
+                    1, 1, 0,
+                    (a + ym).ToString("0.00"));
+            }
+
+            // Restore old settings
+            wd.SubEntityTraits.Color = oldColor; 
 
             return true;
         }
