@@ -25,7 +25,7 @@ namespace PoleSagTool
             if (dRes.Status != PromptStatus.OK) return;
             double height = dRes.Value;
 
-            using (Transaction tr = AcadApp.DB.TransactionManager.StartTransaction())
+            using (Transaction tr = AcadApp.TM.StartTransaction())
             {
                 // Create the solid and set the history flag
 
@@ -42,14 +42,7 @@ namespace PoleSagTool
                 sol.CreateFrustum(height, radius, radius, radius);
 
                 // Add the Solid3d to the modelspace
-                BlockTable bt = (BlockTable)tr.GetObject(
-                    AcadApp.DB.BlockTableId, OpenMode.ForRead);
-
-                BlockTableRecord ms = (BlockTableRecord)tr.GetObject(
-                    bt[BlockTableRecord.ModelSpace], OpenMode.ForWrite);
-
-                ms.AppendEntity(sol);
-                tr.AddNewlyCreatedDBObject(sol, true);
+                AcadApp.AddEntityToDatabase(sol);
 
                 // And transform it to the selected point
                 sol.TransformBy(Matrix3d.Displacement(pt - Point3d.Origin));
@@ -64,7 +57,56 @@ namespace PoleSagTool
         [CommandMethod("CSpan")]
         public void CreateSpan()
         {
-            AcadApp.Ed.WriteMessage("Called Create Span");
+            using (Transaction tr = AcadApp.TM.StartTransaction())
+            {
+                Solid3d firstPole = null;
+                while (firstPole == null)
+                {
+                    PromptEntityResult per =
+                        AcadApp.Ed.GetEntity("\nPick first pole: ");
+                    if (per.Status != PromptStatus.OK) return;
+                    firstPole = tr.GetObject(
+                        per.ObjectId, OpenMode.ForRead) as Solid3d;
+                }
+
+                Solid3d secondPole = null;
+                while (secondPole == null)
+                {
+                    PromptEntityResult per =
+                        AcadApp.Ed.GetEntity("\nPick second pole: ");
+                    if (per.Status != PromptStatus.OK) return;
+                    if (per.ObjectId == firstPole.ObjectId) continue;
+                    secondPole = tr.GetObject(
+                        per.ObjectId, OpenMode.ForRead) as Solid3d;
+                }
+
+                Point3d max1 = firstPole.GeometricExtents.MaxPoint;
+                Point3d min1 = firstPole.GeometricExtents.MinPoint;
+                Point3d pt1 = new Point3d(
+                    (max1.X + min1.X) / 2,
+                    (max1.Y + min1.Y) / 2,
+                    Math.Max(max1.Z, min1.Z));
+                Point3d max2 = secondPole.GeometricExtents.MaxPoint;
+                Point3d min2 = secondPole.GeometricExtents.MinPoint;
+                Point3d pt2 = new Point3d(
+                    (max2.X + min2.X) / 2,
+                    (max2.Y + min2.Y) / 2,
+                    Math.Max(max2.Z, min2.Z));
+                Point3d[] pts = { pt1, pt2 };
+
+                Polyline3d pline = new Polyline3d();
+                AcadApp.AddEntityToDatabase(pline);
+                foreach (Point3d pt in pts)
+                {
+                    using (PolylineVertex3d poly3dVertex = new PolylineVertex3d(pt))
+                    {
+                        // add them to the 3dpoly (this adds them to the db also)
+                        pline.AppendVertex(poly3dVertex);
+                    }
+                }
+
+                tr.Commit();
+            }
         }
     }
 }
