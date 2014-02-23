@@ -118,5 +118,37 @@ namespace PoleSagTool
                 tr.Commit();
             }
         }
+
+        [CommandMethod("MSpan")]
+        public void ModifySpan()
+        {
+            using (Transaction tr = AcadApp.TM.StartTransaction())
+            {
+                Polyline3d span = null;
+                while (span == null || !span.GetExtraWirePct().HasValue)
+                {
+                    PromptEntityResult per =
+                        AcadApp.Ed.GetEntity("\nPick span: ");
+                    if (per.Status != PromptStatus.OK) return;
+                    span = tr.GetObject(
+                        per.ObjectId, OpenMode.ForRead) as Polyline3d;
+                }
+
+                double extraWirePct = span.GetExtraWirePct().Value;
+
+                PromptDoubleOptions pdo =
+                    new PromptDoubleOptions("\nEnter % extra wire: ");
+                pdo.DefaultValue = extraWirePct;
+                pdo.AllowNone = true;
+                PromptDoubleResult dRes = AcadApp.Ed.GetDouble(pdo);
+                if (dRes.Status != PromptStatus.OK) return;
+                extraWirePct = dRes.Value;
+
+                span.UpgradeOpen();
+                span.SetExtraWirePct(extraWirePct);
+
+                tr.Commit();
+            }
+        }
     }
 }
