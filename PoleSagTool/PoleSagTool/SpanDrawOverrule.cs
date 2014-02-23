@@ -34,6 +34,7 @@ namespace PoleSagTool
             double? extraWirePct = pline.GetExtraWirePct();
             if (!extraWirePct.HasValue) return base.WorldDraw(drawable, wd);
 
+            // TODO: Factor actual catenary calculations into common Non-AutoCAD-dependent class
             // Catenary: http://en.wikipedia.org/wiki/Catenary#Derivation_of_equations_for_the_curve
             // y = a cosh (x/a) where x is distance along line here
             // sqrt(s^2 - v^2) = 2a sinh (h/2a)
@@ -45,7 +46,7 @@ namespace PoleSagTool
                 Math.Sqrt(Math.Pow(s, 2) - Math.Pow(v, 2));
             double h = Math.Sqrt(Math.Pow(p1.X - p2.X, 2) + Math.Pow(p1.Y - p2.Y, 2));
             double a = 0, increment = 1;
-            while (increment > .0000001)
+            while (increment > .0000000000001)
             {
                 int i = 1;
                 while (true)
@@ -64,7 +65,7 @@ namespace PoleSagTool
             }
 
             // For very small (zero) a, draw straight line
-            if (a < .0000001) return base.WorldDraw(drawable, wd);
+            if (a < .0000000000001) return base.WorldDraw(drawable, wd);
 
             // Calculate the offset of the minimum point
             // Equation from solving y-ym = a cosh ((x-xm)/a)
