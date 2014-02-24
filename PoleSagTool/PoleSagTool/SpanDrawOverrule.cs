@@ -28,8 +28,10 @@ namespace PoleSagTool
 
     class SpanDrawOverrule : DrawableOverrule
     {
-        static RXClass _targetClass = RXObject.GetClass(typeof(Polyline3d));
+        static readonly RXClass _targetClass = RXObject.GetClass(typeof(Polyline3d));
         static SpanDrawOverrule _instance = new SpanDrawOverrule();
+
+        bool _drawDimensions = true;
 
         public static void Add()
         {
@@ -40,6 +42,11 @@ namespace PoleSagTool
         public static void Remove()
         {
             Overrule.RemoveOverrule(_targetClass, _instance);
+        }
+
+        public static void ToggleSpanDimensioning()
+        {
+            _instance._drawDimensions = !_instance._drawDimensions;
         }
 
         public override bool WorldDraw(Drawable drawable, WorldDraw wd)
@@ -75,7 +82,7 @@ namespace PoleSagTool
 
             wd.Geometry.Polyline(pts, Vector3d.ZAxis, IntPtr.Zero);
 
-            if (xm > 0 && xm < plineXY.Length)
+            if (xm > 0 && xm < plineXY.Length && _drawDimensions)
             {
                 // Draw dimension from lowest point to ground
                 Vector3d mDisp = plineXY * xm / plineXY.Length;

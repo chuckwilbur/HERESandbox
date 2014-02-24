@@ -138,6 +138,13 @@ namespace PoleSagTool
             }
         }
 
+        [CommandMethod("TDim")]
+        public void ToggleSpanDimensioning()
+        {
+            SpanDrawOverrule.ToggleSpanDimensioning();
+            AcadApp.Ed.Regen();
+        }
+
         private static PromptStatus PromptForSpan(Transaction tr, out Polyline3d span)
         {
             span = null;
