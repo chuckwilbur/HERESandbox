@@ -36,7 +36,7 @@ namespace PoleSagTool
 
             // TODO: Factor actual catenary calculations into common Non-AutoCAD-dependent class
             // Catenary: http://en.wikipedia.org/wiki/Catenary#Derivation_of_equations_for_the_curve
-            // y = a cosh (x/a) where x is distance along line here
+            // y = a cosh (x/a) where x is distance along xy plane below line here
             // sqrt(s^2 - v^2) = 2a sinh (h/2a)
             double s = pline.Length * (100 + extraWirePct.Value) / 100;
             Point3d p1 = pline.GetPointAtDist(0);
@@ -74,13 +74,15 @@ namespace PoleSagTool
             double xm = (h - 2 * a * Arsinh(v / (2 * a * Math.Sinh(-h / (2 * a))))) / 2;
             double ym = p2.Z - a * Math.Cosh((h-xm) / a);
 
+            var plineXY = new Vector3d(p2.X - p1.X, p2.Y - p1.Y, 0);
+            const int segmentCount = 100;
+
             var pts = new Point3dCollection();
-            for (int i = 0; i <= 100; ++i)
+            for (int i = 0; i <= segmentCount; ++i)
             {
-                double x = i * pline.Length / 100;
-                if (x > pline.Length) x = pline.Length;
-                Point3d pt = pline.GetPointAtDist(x);
-                Point3d adjustedPt = new Point3d(pt.X, pt.Y, a * Math.Cosh((x - xm) / a) + ym);
+                Vector3d currDisp = plineXY * i / segmentCount;
+                Point3d pt = p1 + currDisp;
+                var adjustedPt = new Point3d(pt.X, pt.Y, a * Math.Cosh((currDisp.Length - xm) / a) + ym);
                 pts.Add(adjustedPt);
             }
 
@@ -90,10 +92,11 @@ namespace PoleSagTool
 
             wd.Geometry.Polyline(pts, Vector3d.ZAxis, IntPtr.Zero);
 
-            if (xm > 0 && xm < pline.Length)
+            if (xm > 0 && xm < plineXY.Length)
             {
                 // Draw dimension from lowest point to ground
-                Point3d pt = pline.GetPointAtDist(xm);
+                Vector3d mDisp = plineXY * xm / plineXY.Length;
+                Point3d pt = p1 + mDisp;
                 pts.Clear();
                 pts.Add(new Point3d(pt.X, pt.Y, a + ym));
                 pts.Add(new Point3d(pt.X, pt.Y, 0));
