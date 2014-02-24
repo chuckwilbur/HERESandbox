@@ -9,6 +9,8 @@ using Autodesk.AutoCAD.GraphicsInterface;
 using Autodesk.AutoCAD.Geometry;
 using Autodesk.AutoCAD.Runtime;
 
+using PoleSagTool.EED;
+
 namespace PoleSagTool
 {
     static class PointConvert
@@ -32,7 +34,7 @@ namespace PoleSagTool
         public static void Add()
         {
             Overrule.AddOverrule(_targetClass, _instance, false);
-            _instance.SetSpanDataFilter();
+            _instance.SetPoleSagDataFilter();
         }
 
         public static void Remove()

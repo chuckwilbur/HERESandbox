@@ -9,6 +9,8 @@ using Autodesk.AutoCAD.EditorInput;
 using Autodesk.AutoCAD.Geometry;
 using Autodesk.AutoCAD.Runtime;
 
+using PoleSagTool.EED;
+
 namespace PoleSagTool
 {
     public class PoleSagCommands
@@ -32,8 +34,8 @@ namespace PoleSagTool
                 Solid3d sol = new Solid3d();
                 sol.RecordHistory = true;
 
-                // Based on http://www.blpole.com/products/5/dimension, a
-                // class 2 pole has a circumference (in inches) of
+                // Based on http://www.blpole.com/products/5/dimension,
+                // a class 2 pole has a circumference (in inches) of
                 // roughly .27*h+26 with h in feet
                 double circumferenceInches = .27 * height + 26;
                 double radiusInches = circumferenceInches / (2 * Math.PI);
@@ -88,7 +90,7 @@ namespace PoleSagTool
                 if (dRes.Status != PromptStatus.OK) return;
                 double extraWirePct = dRes.Value;
 
-                Point3d[] pts = { GetPoleTop(firstPole), GetPoleTop(secondPole) };
+                Point3d[] pts = { firstPole.GetPoleTop(), secondPole.GetPoleTop() };
 
                 Polyline3d pline = new Polyline3d();
                 tr.InsertEntity(pline);
@@ -102,6 +104,10 @@ namespace PoleSagTool
                 }
 
                 pline.SetSpanData(firstPole, secondPole, extraWirePct);
+                firstPole.UpgradeOpen();
+                firstPole.SetSpanData(pline);
+                secondPole.UpgradeOpen();
+                secondPole.SetSpanData(pline);
 
                 tr.Commit();
             }
@@ -130,48 +136,6 @@ namespace PoleSagTool
 
                 tr.Commit();
             }
-        }
-
-        [CommandMethod("USpan")]
-        public void UpdateSpan()
-        {
-            using (Transaction tr = AcadApp.TM.StartTransaction())
-            {
-                Polyline3d span;
-                if (PromptForSpan(tr, out span) != PromptStatus.OK) return;
-
-                List<Handle> poles = span.GetPoles();
-                int i = 0;
-                foreach(ObjectId vertexId in span)
-                {
-                    if (i >= poles.Count) continue;
-
-                    Handle poleHandle = poles[i];
-                    ObjectId poleId = AcadApp.DB.GetObjectId(false, poleHandle, 0);
-                    if (poleId == ObjectId.Null) continue;
-                    var pole = tr.GetObject(poleId, OpenMode.ForRead) as Solid3d;
-                    if (pole == null) continue;
-
-                    var vertex = tr.GetObject(
-                        vertexId, OpenMode.ForWrite) as PolylineVertex3d;
-                    vertex.Position = GetPoleTop(pole);
-
-                    ++i;
-                }
-
-                tr.Commit();
-            }
-        }
-
-        private static Point3d GetPoleTop(Solid3d pole)
-        {
-            Point3d max = pole.GeometricExtents.MaxPoint;
-            Point3d min = pole.GeometricExtents.MinPoint;
-            Point3d ptTop = new Point3d(
-                (max.X + min.X) / 2,
-                (max.Y + min.Y) / 2,
-                Math.Max(max.Z, min.Z));
-            return ptTop;
         }
 
         private static PromptStatus PromptForSpan(Transaction tr, out Polyline3d span)

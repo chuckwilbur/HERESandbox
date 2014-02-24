@@ -19,6 +19,7 @@ namespace PoleSagTool
         void IExtensionApplication.Initialize()
         {
             SpanDrawOverrule.Add();
+            PoleChangeOverrule.Add();
             AcadApp.Ed.WriteMessage("\nPole Sag Tool is loaded...\n");
         }
 
@@ -30,6 +31,7 @@ namespace PoleSagTool
         void IExtensionApplication.Terminate()
         {
             SpanDrawOverrule.Remove();
+            PoleChangeOverrule.Remove();
         }
 
         #endregion
