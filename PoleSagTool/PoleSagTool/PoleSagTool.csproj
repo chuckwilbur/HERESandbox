@@ -58,6 +58,7 @@
     <Compile Include="Acad\TransactionExt.cs" />
     <Compile Include="Acad\XData.cs" />
     <Compile Include="AppEntry.cs" />
+    <Compile Include="Common\Catenary.cs" />
     <Compile Include="PoleSagCommands.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="SpanDrawOverrule.cs" />
